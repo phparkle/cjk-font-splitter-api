@@ -1,7 +1,22 @@
 {
   "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "nodemon server.js --inspect",
+    "test": "node test/server.test.js"
+  },
   "dependencies": {
     "@xenyo/cjk-font-subsetter": "^1.0.0",
-    "koa": "^2.13.4"
+    "koa": "^2.13.4",
+    "koa-body": "^4.2.0",
+    "koa-router": "^10.1.1"
+  },
+  "devDependencies": {
+    "axios": "^0.24.0",
+    "eslint": "^8.4.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.3",
+    "form-data": "^4.0.0",
+    "nodemon": "^2.0.15"
   }
 }
