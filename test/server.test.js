@@ -1,6 +1,9 @@
 import axios from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
+import path from 'path'
+
+const readStream = fs.createReadStream('data/input/NotoSerifSC-Regular.otf')
 
 const formData = new FormData()
 formData.append('fontDisplay', 'swap')
@@ -9,7 +12,7 @@ formData.append('fontWeight', 400)
 formData.append('formats', 'woff2,woff')
 formData.append('locale', 'sc')
 formData.append('srcPrefix', '../webfonts')
-formData.append('fontFile', fs.createReadStream('data/input/NotoSerifSC-Regular.otf'))
+formData.append('fontFile', readStream)
 
 const res = await axios.post('http://localhost:3000/cjk-font', formData, {
   headers: formData.getHeaders(),

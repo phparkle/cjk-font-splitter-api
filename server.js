@@ -1,19 +1,38 @@
-import Koa from 'koa'
-import Router from 'koa-router'
-import koaBody from 'koa-body'
+import express from 'express'
+import multer from 'multer'
+import crypto from 'crypto'
+import fs from 'fs-extra'
+import path from 'path'
+// import CJKFontSplitter from '@xenyo/cjk-font-splitter'
 
-const app = new Koa()
-const router = new Router()
+/**
+ * Express middleware
+ */
+const app = express()
 
-router.post('/cjk-font', async (ctx) => {
-  console.log(ctx.headers)
-  console.log(ctx.request.body)
-  console.log(ctx.request.files)
-  ctx.body = { your: 'font here' }
-})
+const upload = multer({ dest: 'data/uploads' })
 
-app.use(koaBody({ multipart: true }))
-app.use(router.routes())
-app.use(router.allowedMethods())
+app.post(
+  '/cjk-font',
+  upload.single('fontFile'),
+  async (req, res, next) => {
+    const { file } = req
+    const [, ext] = file.mimetype.split('/')
+    const readStream = fs.createReadStream(file.path)
+    const hash = crypto.createHash('sha256')
+    readStream.on('data', (chunk) => hash.update(chunk))
+    readStream.on('close', async () => {
+      const fileName = `${hash.digest('hex')}.${ext}`
+      const newPath = path.join(path.dirname(file.path), fileName)
+      await fs.rename(file.path, newPath)
+      file.filename = fileName
+      file.path = newPath
+      next()
+    })
+  },
+  async (req, res) => {
+    res.send({ your: 'font here' })
+  },
+)
 
 app.listen(3000)
