@@ -1,7 +1,6 @@
 import axios from 'axios'
 import FormData from 'form-data'
 import fs from 'fs'
-import path from 'path'
 
 const readStream = fs.createReadStream('data/input/NotoSerifSC-Regular.otf')
 
