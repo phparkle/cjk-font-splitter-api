@@ -1,7 +1,4 @@
-import os from 'os'
-
 import CJKFontSplitter from '@xenyo/cjk-font-splitter'
-import archiver from 'archiver'
 import Fastify from 'fastify'
 import multer from 'fastify-multer'
 import tmp from 'tmp'
