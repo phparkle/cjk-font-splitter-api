@@ -1,38 +1,62 @@
-import express from 'express'
-import multer from 'multer'
-import crypto from 'crypto'
-import fs from 'fs-extra'
-import path from 'path'
-// import CJKFontSplitter from '@xenyo/cjk-font-splitter'
+import os from 'os'
+
+import CJKFontSplitter from '@xenyo/cjk-font-splitter'
+import archiver from 'archiver'
+import Fastify from 'fastify'
+import multer from 'fastify-multer'
+import tmp from 'tmp'
+import fs from 'fs'
 
 /**
- * Express middleware
+ * Multer
  */
-const app = express()
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      tmp.dir((err, path, cleanup) => {
+        if (err) throw err
+        req.cleanup = cleanup
+        cb(null, path)
+      })
+    },
+  }),
+})
 
-const upload = multer({ dest: 'data/uploads' })
+/**
+ * Fastify
+ */
+const fastify = Fastify({ logger: true })
+fastify.register(multer.contentParser)
 
-app.post(
-  '/cjk-font',
-  upload.single('fontFile'),
-  async (req, res, next) => {
-    const { file } = req
-    const [, ext] = file.mimetype.split('/')
-    const readStream = fs.createReadStream(file.path)
-    const hash = crypto.createHash('sha256')
-    readStream.on('data', (chunk) => hash.update(chunk))
-    readStream.on('close', async () => {
-      const fileName = `${hash.digest('hex')}.${ext}`
-      const newPath = path.join(path.dirname(file.path), fileName)
-      await fs.rename(file.path, newPath)
-      file.filename = fileName
-      file.path = newPath
-      next()
+fastify.post(
+  '/split-font',
+  { preHandler: upload.single('fontFile') },
+  async (request, reply) => {
+    const {
+      fontDisplay,
+      fontFamily,
+      fontWeight,
+      formats,
+      locale,
+      srcPrefix,
+    } = request.body
+
+    const { file } = request
+
+    const zipFilePath = await CJKFontSplitter({
+      fontDisplay,
+      fontFamily,
+      fontWeight,
+      formats: formats.split(','),
+      inputFontFilePath: file.path,
+      locale,
+      outputPath: file.destination,
+      srcPrefix,
     })
-  },
-  async (req, res) => {
-    res.send({ your: 'font here' })
+
+    const stream = fs.createReadStream(zipFilePath)
+    reply.type('application/zip').send(stream)
   },
 )
 
-app.listen(3000)
+fastify.listen(3000)
